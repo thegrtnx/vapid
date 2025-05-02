@@ -26,10 +26,20 @@
 			async function init() {
 				try {
 					// Register the service worker
-					await navigator.serviceWorker.register("./sw.js");
+					const registration = await navigator.serviceWorker.register("./sw.js");
 
-					// Wait until it becomes active
-					const registration = await navigator.serviceWorker.ready;
+					// Wait for the service worker to activate (to ensure it's fully ready)
+					await new Promise((resolve, reject) => {
+						if (registration.active) {
+							resolve();
+						} else {
+							registration.addEventListener("statechange", function (event) {
+								if (event.target.state === "activated") {
+									resolve();
+								}
+							});
+						}
+					});
 
 					// Request notification permission
 					const permission = await Notification.requestPermission();
