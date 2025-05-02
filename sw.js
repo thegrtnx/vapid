@@ -4,7 +4,7 @@ self.addEventListener("push", function (event) {
 	const options = {
 		body: data.body || "You have a new notification.",
 		icon: data.icon || "/icon.png", // Default icon, can be replaced with your own icon
-		badge: data.badge || "/badge.png", // Optional badge image
+		badge: data.badge || "/icon.png", // Optional badge image
 	};
 
 	event.waitUntil(self.registration.showNotification(title, options));
@@ -16,7 +16,7 @@ self.addEventListener("notificationclick", function (event) {
 
 	// Perform any action when notification is clicked
 	event.waitUntil(
-		clients.openWindow("https://yourwebsite.com") // Open a specific URL (e.g., your website)
+		clients.openWindow("https://thegrtnx.github.io/vapid/") // Open a specific URL (e.g., your website)
 	);
 });
 
