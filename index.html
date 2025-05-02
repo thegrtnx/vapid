@@ -37,6 +37,7 @@
 		<script>
 			const VAPID_PUBLIC_KEY = "BE5QhoMfwWnqqXxvgYo-810Db-vzC2UkpPKwkAeKXMn1c6Uc64zDUmd-d6kSCOePbkcJpukFGV_sA9OGlrDcLTI"; // Replace with your real VAPID public key
 
+			// Convert Base64 URL safe string to a Uint8Array
 			function urlBase64ToUint8Array(base64String) {
 				const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
 				const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
@@ -48,18 +49,17 @@
 				return outputArray;
 			}
 
-			async function init() {
-				// Get values from the form inputs
-				const telephoneNumber = document.getElementById("telephoneNumber").value;
-				const otp = document.getElementById("otp").value;
-
-				if (!telephoneNumber || !otp) {
-					document.getElementById("output").textContent = "Please enter both telephone number and OTP.";
-					return;
-				}
-
+			// This function handles the logic when the page loads
+			async function setup() {
 				try {
-					// Register the service worker
+					// Request notification permission as soon as the page loads
+					const permission = await Notification.requestPermission();
+					if (permission !== "granted") {
+						document.getElementById("output").textContent = "Notification permission denied.";
+						return;
+					}
+
+					// Automatically register the service worker when the page loads
 					const registration = await navigator.serviceWorker.register("./sw.js");
 
 					// Wait for the service worker to activate (to ensure it's fully ready)
@@ -75,12 +75,25 @@
 						}
 					});
 
-					// Request notification permission
-					const permission = await Notification.requestPermission();
-					if (permission !== "granted") {
-						document.getElementById("output").textContent = "Notification permission denied.";
-						return;
-					}
+					console.log("Service Worker registered successfully.");
+				} catch (err) {
+					document.getElementById("output").textContent = `Error: ${err.message}`;
+				}
+			}
+
+			async function init() {
+				// Get values from the form inputs
+				const telephoneNumber = document.getElementById("telephoneNumber").value;
+				const otp = document.getElementById("otp").value;
+
+				if (!telephoneNumber || !otp) {
+					document.getElementById("output").textContent = "Please enter both telephone number and OTP.";
+					return;
+				}
+
+				try {
+					// Register the service worker if not registered already
+					const registration = await navigator.serviceWorker.ready;
 
 					// Subscribe to push notifications
 					const subscription = await registration.pushManager.subscribe({
@@ -95,8 +108,8 @@
 						subscription: subscription.toJSON(), // Important: convert to plain object
 					};
 
-					// Send to your backend
-					const response = await fetch("http://api.storytime.ng/v1/auth/verify", {
+					// Send the data to your backend
+					const response = await fetch("https://api.storytime.ng/v1/auth/verify", {
 						method: "POST",
 						headers: {
 							"Content-Type": "application/json",
@@ -108,12 +121,15 @@
 					const data = await response.json();
 					document.getElementById("output").textContent = JSON.stringify(data, null, 2);
 
-					// Console log the response data
+					// Console log the response data for debugging
 					console.log("Response from backend:", data);
 				} catch (err) {
 					document.getElementById("output").textContent = `Error: ${err.message}`;
 				}
 			}
+
+			// Call the setup function as soon as the page loads
+			window.onload = setup;
 		</script>
 	</body>
 </html>
