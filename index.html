@@ -10,12 +10,12 @@
 		<pre id="output"></pre>
 
 		<script>
-			const VAPID_PUBLIC_KEY = "BE5QhoMfwWnqqXxvgYo-810Db-vzC2UkpPKwkAeKXMn1c6Uc64zDUmd-d6kSCOePbkcJpukFGV_sA9OGlrDcLTI"; // Base64-encoded
+			const VAPID_PUBLIC_KEY = "BE5QhoMfwWnqqXxvgYo-810Db-vzC2UkpPKwkAeKXMn1c6Uc64zDUmd-d6kSCOePbkcJpukFGV_sA9OGlrDcLTI"; // Replace with your real VAPID public key
 
-			async function urlBase64ToUint8Array(base64String) {
+			function urlBase64ToUint8Array(base64String) {
 				const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-				const base64 = (base64String + padding).replace(/\-/g, "+").replace(/_/g, "/");
-				const rawData = atob(base64);
+				const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+				const rawData = window.atob(base64);
 				const outputArray = new Uint8Array(rawData.length);
 				for (let i = 0; i < rawData.length; ++i) {
 					outputArray[i] = rawData.charCodeAt(i);
@@ -25,19 +25,33 @@
 
 			async function init() {
 				try {
-					const registration = await navigator.serviceWorker.register("./sw.js");
+					// Register the service worker
+					await navigator.serviceWorker.register("./sw.js");
+
+					// Wait until it becomes active
+					const registration = await navigator.serviceWorker.ready;
+
+					// Request notification permission
+					const permission = await Notification.requestPermission();
+					if (permission !== "granted") {
+						document.getElementById("output").textContent = "Notification permission denied.";
+						return;
+					}
+
+					// Subscribe to push notifications
 					const subscription = await registration.pushManager.subscribe({
 						userVisibleOnly: true,
-						applicationServerKey: await urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+						applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
 					});
 
-					// Send to backend
+					// Prepare payload
 					const payload = {
 						telephoneNumber: "+2348164664465",
 						otp: "123456",
-						subscription,
+						subscription: subscription.toJSON(), // Important: convert to plain object
 					};
 
+					// Send to your backend
 					const response = await fetch("http://api.storytime.ng/v1/auth/verify", {
 						method: "POST",
 						headers: {
