@@ -6,7 +6,32 @@
 	</head>
 	<body>
 		<h2>Test VAPID OTP Verification</h2>
-		<button onclick="init()">Subscribe & Send OTP</button>
+
+		<!-- Form to take user input for telephone number and OTP -->
+		<form id="otpForm">
+			<label for="telephoneNumber">Telephone Number:</label>
+			<input
+				type="text"
+				id="telephoneNumber"
+				name="telephoneNumber"
+				required />
+			<br />
+			<br />
+			<label for="otp">OTP:</label>
+			<input
+				type="text"
+				id="otp"
+				name="otp"
+				required />
+			<br />
+			<br />
+			<button
+				type="button"
+				onclick="init()">
+				Subscribe & Send OTP
+			</button>
+		</form>
+
 		<pre id="output"></pre>
 
 		<script>
@@ -24,6 +49,15 @@
 			}
 
 			async function init() {
+				// Get values from the form inputs
+				const telephoneNumber = document.getElementById("telephoneNumber").value;
+				const otp = document.getElementById("otp").value;
+
+				if (!telephoneNumber || !otp) {
+					document.getElementById("output").textContent = "Please enter both telephone number and OTP.";
+					return;
+				}
+
 				try {
 					// Register the service worker
 					const registration = await navigator.serviceWorker.register("./sw.js");
@@ -56,8 +90,8 @@
 
 					// Prepare payload
 					const payload = {
-						telephoneNumber: "+2348164664465",
-						otp: "123456",
+						telephoneNumber: telephoneNumber,
+						otp: otp,
 						subscription: subscription.toJSON(), // Important: convert to plain object
 					};
 
